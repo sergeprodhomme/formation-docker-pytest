@@ -29,6 +29,12 @@ services:
       # (01-schema.sql puis 02-appuser.sh), au premier demarrage seulement.
       - ./db:/docker-entrypoint-initdb.d:ro
       - pgdata:/var/lib/postgresql/data
+    # Expose Postgres UNIQUEMENT sur localhost du Mac (127.0.0.1),
+    # pour les outils graphiques (TablePlus, pgAdmin, DBeaver, Postico).
+    # 15432 (et pas 5432) : un Postgres local occupe deja le port standard.
+    # Jamais "5432:5432" nu : cela publierait la BDD sur le reseau local.
+    ports:
+      - "127.0.0.1:15432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d testdb"]
       interval: 5s
