@@ -1,0 +1,39 @@
+services:
+  web:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      SECRET_HMAC: ${SECRET_HMAC}
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: testdb
+      POSTGRES_USER: user
+      # Env_file évite de laisser le mot de passe en clair dans le compose.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # Requis par db/02-appuser.sh (scripts init executes par le shell).
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD}
+    # Locale FR non indispensable : 'C' + UTF-8 est le plus predictible.
+    command: >
+      postgres -c log_min_duration_statement=500
+              -c shared_buffers=128MB
+              -c shared_preload_libraries=pg_stat_statements
+    # Le schema est execute automatiquement au PREMIER demarrage seulement
+    # (si le volume est vide). Pour le rejouer :
+    #   docker compose down -v && docker compose up --build
+    volumes:
+      # Tout le dossier : les scripts sont executes dans l'ordre alphabetique
+      # (01-schema.sql puis 02-appuser.sh), au premier demarrage seulement.
+      - ./db:/docker-entrypoint-initdb.d:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d testdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

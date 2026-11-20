@@ -1,0 +1,6 @@
+.env
+backup_*.sql
+__pycache__/
+.pytest_cache/
+.DS_Store
+report.xml
